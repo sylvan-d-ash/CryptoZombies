@@ -24,6 +24,14 @@ contract ZombieFeeding is ZombieFactory {
     // CryptoKitties contract
     KittyInterface kittyContract = KittyInterface(ckAddress);
 
+    function _triggerCooldown(Zombie storage _zombie) internal {
+        _zombie.readyTime = uint32(block.timestamp + cooldownTime);
+    }
+
+    function _isReady(Zombie storage _zombie) internal view returns (bool) {
+        return (_zombie.readyTime <= block.timestamp);
+    }
+
     function feedAndMultiply(uint _zombieId, uint _targetDna, string memory _species) public {
         require(msg.sender == zombieToOwner[_zombieId], "You are not the owner of this zombie");
 
@@ -40,5 +48,16 @@ contract ZombieFeeding is ZombieFactory {
 
         // Create a new zombie with the combined DNA
         _createZombie("NoName", newDna);
+    }
+
+    function feedOnKitty(uint _zombieId, uint _kittyId) public {
+        require(msg.sender == zombieToOwner[_zombieId], "You are not the owner of this zombie");
+
+        // Get kitty's DNA from the CryptoKitties contract
+        uint kittyDna;
+        (,,,,,,,,, kittyDna) = kittyContract.getKitty(_kittyId);
+
+        // Feed and multiply the zombie with the kitty's DNA
+        feedAndMultiply(_zombieId, _kittyId, "kitty");
     }
 }
